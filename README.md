@@ -10,7 +10,7 @@ bundle test directory and file for charms that do not already have tests.
 
 Run the script by the following command:
 
-    python bundletester.py <charm directory> <bundle directory>
+    python bundlemaker.py <charm directory> <bundle directory>
 
 The series will be added to the charm directory (currently only precise 
 and trusty) followed by a charm directory name.  
@@ -18,7 +18,7 @@ and trusty) followed by a charm directory name.
 A bundle will be written if the charm directory does not contain a tests
 directory or it is empty.
 
-    python bundletester.py /home/mbruzek/workspace/charms /tmp/bundles/
+    python bundlemaker.py /home/mbruzek/workspace/charms /tmp/bundles/
 
 This example will inspect the charms at /home/mbruzek/workspace/charms and
 write the bundle files to /tmp/bundles/ creating the directories if necessary.
