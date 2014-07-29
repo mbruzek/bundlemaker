@@ -59,20 +59,33 @@ bundle_yaml = """
 """
 
 
-def charms_without_tests(charm_directory):
+def is_charm_dir(path):
+    """ Return True if the path is a charm directory. """
+    is_charm = False
+    if os.path.isdir(path):
+        # The metadata file defines a charm, it must exist.
+        metadata_file = os.path.join(path, 'metadata.yaml')
+        if os.path.isfile(metadata_file):
+            is_charm = True
+    return is_charm
+
+
+def get_charms(charm_directory):
     """ Create a list of paths to charms that do not have tests. """
     charm_paths = []
     charm_number = 0
-    # Iterate over each series.
-    for series in charm_series:
-        directory = os.path.join(charm_directory, series)
-        if os.path.isdir(directory):
-            for file_or_dir in os.listdir(directory):
-                charm = os.path.join(directory, file_or_dir)
-                if os.path.isdir(charm):
-                    # The metadata file defines a charm, it must exist.
-                    metadata_file = os.path.join(charm, 'metadata.yaml')
-                    if os.path.isfile(metadata_file):
+    # Is the directory already a charm directory?
+    if is_charm_dir(charm_directory):
+        charm_paths.append(charm_directory)
+        charm_number += 1
+    else:
+        # Go through the charms directory to find the charm directories.
+        for series in charm_series:
+            directory = os.path.join(charm_directory, series)
+            if os.path.isdir(directory):
+                for file_or_dir in os.listdir(directory):
+                    charm = os.path.join(directory, file_or_dir)
+                    if is_charm_dir(charm):
                         charm_number += 1
                         tests = os.path.join(charm, 'tests')
                         # Does the tests directory exist and is not empty?
@@ -108,8 +121,9 @@ def write_bundles_yaml(bundle_file_name, charm_path, metadata_yaml):
     if (os.path.isabs(charm_path)):
         charm_uri = charm_path
     else:
-        series = get_charm_series(charm_path)
-        index = path.find(series)
+        # Use a relative path.
+        series = get_series(charm_path)
+        index = charm_path.find(series)
         if index == -1:
             index = 0
         charm_uri = charm_path[series:]
@@ -134,8 +148,6 @@ def write_bundles_yaml(bundle_file_name, charm_path, metadata_yaml):
 
 def create_bundles(bundle_directory, charm_paths):
     """ Create the bundles for the charm paths in the list. """
-    if not os.path.exists(bundle_directory):
-        os.makedirs(bundle_directory)
     for path in charm_paths:
         metadata = get_charm_metadata(path)
         # Get the charm name from metatdata not the path!
@@ -143,7 +155,9 @@ def create_bundles(bundle_directory, charm_paths):
         # Get the charm series from the path.
         series = get_series(path)
         # Create the charm bundle directory path.
-        charm_bundle_directory = os.path.join(bundle_directory, series, charm_name)
+        charm_bundle_directory = os.path.join(bundle_directory,
+                                              series,
+                                              charm_name)
         if not os.path.isdir(charm_bundle_directory):
             os.makedirs(charm_bundle_directory)
 
@@ -176,10 +190,10 @@ def create_bundles(bundle_directory, charm_paths):
         bundle_file = os.path.join(charm_bundle_directory, 'bundles.yaml')
         if not os.path.exists(bundle_file):
             # Write the bundles.yaml file.
-            write_bundles_yaml(bundle_file, path, metadata) 
+            write_bundles_yaml(bundle_file, path, metadata)
             print('Created bundle in {0} for the charm {1}'.format(
                 charm_bundle_directory, path))
-    print('{0} charms do not have tests.'.format(len(charm_paths)))   
+    print('{0} bundles created.'.format(len(charm_paths)))
 
 
 if __name__ == '__main__':
@@ -188,6 +202,10 @@ if __name__ == '__main__':
     if not os.path.isabs(directory):
         directory = os.path.abspath(directory)
     # Get a list of paths to charms without tests.
-    charm_paths = charms_without_tests(directory)
+    charm_paths = get_charms(directory)
     # The second argument is the bundle directory.
-    create_bundles(sys.argv[2], charm_paths)
+    bundle_directory = sys.argv[2]
+    if not os.path.exists(bundle_directory):
+        os.makedirs(bundle_directory)
+    # Create the bundles for the charms.
+    create_bundles(bundle_directory, charm_paths)
