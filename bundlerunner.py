@@ -41,6 +41,13 @@ def get_bundles(bundle_directory):
     return bundle_paths
 
 
+def get_series(bundle_path):
+    """ Get the series from a bundle path. """
+    series = None
+    series = os.path.split(os.path.split(bundle_path)[0])[1]
+    return series
+
+
 def run_bundles_path(bundle_directory, output):
     """ Run the bundle tests given a bundle directory. """
     # Find the bundles to test.
@@ -54,19 +61,21 @@ def run_bundles(bundles, output):
     """ Run the bundle tests in the list of bundles.  """
     for bundle in bundles:
         # Create a unique name for the result file.
-        result_file_name = bundle.replace('/', '_')
+        series = get_series(bundle)
+        bundle_name = os.path.split(bundle)[1]
+        result_file_name = '{0}_{1}'.format(series, bundle_name)
         result_path = os.path.join(output, result_file_name)
+        # Create a place to put the output log files from charmtools.
         logs_directory = result_path + "_logs"
         if not os.path.isdir(logs_directory):
             os.mkdir(logs_directory)
 
         # Create a command that needs an output directory appended.
         command = ['juju', 'test', '-v', '--timeout', '9m',
-                   '--on-timeout', 'fail', '-o']
+                   '--on-timeout', 'fail', '-o', logs_directory]
         print(bundle)
         # Change the directory to the bundle root.
         os.chdir(bundle)
-        command.append(logs_directory)
         print(command)
         try:
             # Run the juju test command in this directory.
