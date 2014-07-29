@@ -53,13 +53,20 @@ def run_bundles_path(bundle_directory, output):
 def run_bundles(bundles, output):
     """ Run the bundle tests in the list of bundles.  """
     for bundle in bundles:
+        # Create a unique name for the result file.
+        result_file_name = bundle.replace('/', '_')
+        result_path = os.path.join(output, result_file_name)
+        logs_directory = result_path + "_logs"
+        if not os.path.isdir(logs_directory):
+            os.mkdir(logs_directory)
+
         # Create a command that needs an output directory appended.
         command = ['juju', 'test', '-v', '--timeout', '9m',
                    '--on-timeout', 'fail', '-o']
         print(bundle)
         # Change the directory to the bundle root.
         os.chdir(bundle)
-        command.append(os.path.join(output, bundle))
+        command.append(logs_directory)
         print(command)
         try:
             # Run the juju test command in this directory.
@@ -69,9 +76,6 @@ def run_bundles(bundles, output):
             results = "{0} returned {1} with output {2}".format(
                 cpe.cmd, cpe.returncode, cpe.output)
         print(results)
-        # Create a unique name for the result file.
-        result_file_name = bundle.replace('/', '_')
-        result_path = os.path.join(output, result_file_name)
         # Write the results of the bundle test.
         with open(result_path, 'w') as result_file:
             result_file.write(str(results))
